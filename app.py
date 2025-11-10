@@ -5,10 +5,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
 
-# ---------------------------------
-# Load Data
-# ---------------------------------
-df = pd.read_csv('/Users/raleightognela/Documents/book_recommender/goodreads_data.csv')
+
+df = pd.read_csv('goodreads_data.csv')
 
 # Clean
 df.drop_duplicates(subset=['Book', 'Author'], inplace=True)
@@ -92,7 +90,7 @@ if mode == "By Genre":
             st.markdown(f"[Goodreads Page]({row['URL']})")
             st.write("---")
 
-        # 💡 Show similar books right below the clicked one
+        
         if st.session_state.selected_book == book_name:
             st.markdown(f"**Books similar to _{book_name}_:**")
             results = get_similar_books(book_name)
