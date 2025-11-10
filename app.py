@@ -43,16 +43,14 @@ genre_counts = (
 )
 top_genres = set(genre_counts.head(10).index)
 df = df[df['Genres'].apply(lambda x: any(g.strip() in top_genres for g in x.split(',')))].reset_index(drop=True)
-
+print(top_genres)
 # TF-IDF for description similarity
 tfidf = TfidfVectorizer(stop_words='english', max_features=5000)
 tfidf_matrix = tfidf.fit_transform(df['Description'].fillna(""))
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 indices = pd.Series(df.index, index=df['Book']).drop_duplicates()
 
-# ---------------------------------
-# Helper Functions
-# ---------------------------------
+
 def top_books_by_genre(df, genre, n=5):
     subset = df[df['Genres'].str.contains(genre, case=False, na=False)]
     return subset.sort_values('Popularity', ascending=False).head(n)[['Book', 'Author', 'Avg_Rating', 'Num_Ratings', 'URL']]
@@ -66,24 +64,19 @@ def get_similar_books(title, n=5):
     sim_indices = [i[0] for i in sim_scores[1:n+1]]
     return df.iloc[sim_indices][['Book', 'Author', 'Genres', 'Avg_Rating', 'URL']]
 
-# ---------------------------------
-# Streamlit UI
-# ---------------------------------
+#UI
 st.title("📚 Book Recommendation System")
 
 st.sidebar.header("🔍 Options")
 mode = st.sidebar.radio("Choose Recommendation Type:", ["By Genre", "Similar Books"])
 
-# Initialize session state for selected_book
+
 if 'selected_book' not in st.session_state:
     st.session_state.selected_book = None
 
 if mode == "By Genre":
-    # Genre-based recommendations
-    all_genres = sorted(set(
-        g for sublist in df['Genres'].dropna().apply(lambda x: [genre.strip() for genre in x.split(',')])
-        for g in sublist
-    ))
+    
+    all_genres = sorted(top_genres, key=lambda g: genre_counts[g], reverse=True)
     genre = st.selectbox("Select a Genre:", all_genres)
     top_books = top_books_by_genre(df, genre)
     st.subheader(f"Top {genre} Books:")
