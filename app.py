@@ -8,21 +8,22 @@ import re
 # ---------------------------------
 # Load Data
 # ---------------------------------
-df = pd.read_csv('/Users/raleightognela/Downloads/goodreads_data.csv')
+df = pd.read_csv('/Users/raleightognela/Documents/book_recommender/goodreads_data.csv')
 
-# Clean + Prepare
+# Clean
 df.drop_duplicates(subset=['Book', 'Author'], inplace=True)
 df.dropna(subset=['Description', 'Genres'], inplace=True)
 df['Num_Ratings'] = df['Num_Ratings'].str.replace(',', '').astype(int)
 df['Popularity'] = df['Avg_Rating'] * np.log10(df['Num_Ratings'] + 1)
 
-# Clean Genres column: remove brackets, quotes, and duplicates within each entry
+
+# Clean Genres column
 def clean_genres(genres_str):
-    # Remove brackets and quotes
+    
     cleaned = re.sub(r'[\[\]\'\"]', '', genres_str)
-    # Split by comma, strip whitespace, lower for uniformity
+    
     genres_list = [g.strip() for g in cleaned.split(',')]
-    # Remove duplicates while preserving order
+    
     seen = set()
     unique_genres = []
     for g in genres_list:
@@ -32,6 +33,16 @@ def clean_genres(genres_str):
     return ', '.join(unique_genres)
 
 df['Genres'] = df['Genres'].apply(clean_genres)
+genre_counts = (
+    df['Genres']
+    .dropna()
+    .str.split(',')
+    .explode()
+    .str.strip()
+    .value_counts()
+)
+top_genres = set(genre_counts.head(10).index)
+df = df[df['Genres'].apply(lambda x: any(g.strip() in top_genres for g in x.split(',')))].reset_index(drop=True)
 
 # TF-IDF for description similarity
 tfidf = TfidfVectorizer(stop_words='english', max_features=5000)
